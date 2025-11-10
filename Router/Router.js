@@ -2,7 +2,7 @@ import Route from "./Route.js";
 import { allRoutes, websiteName } from "./allRoutes.js";
 
 // Creating a route for the 404 page (page not found)
-const route404 = new Route("404", "Page introuvable", "/pages/404.html");
+const route404 = new Route("404", "Page introuvable", "/pages/404.html", []);
 
 // Function to recover route corresponding to a given URL
 const getRouteByUrl = (url) => {
@@ -13,7 +13,7 @@ const getRouteByUrl = (url) => {
       currentRoute = element;
     }
   });
-  // Si no correspondence found, return route 404
+  // If no correspondence found, return route 404
   if (currentRoute != null) {
     return currentRoute;
   } else {
@@ -26,6 +26,24 @@ const LoadContentPage = async () => {
   const path = window.location.pathname;
   // Recovery of the current URL
   const actualRoute = getRouteByUrl(path);
+
+  // Check access rights to page
+const allRolesArray = actualRoute.authorize;
+
+if(allRolesArray.length > 0){
+  if(allRolesArray.includes("disconnected")){
+    if(isConnected()){
+      window.location.replace("/");
+    }
+  }
+  else{
+    const roleUser = getRole();
+    if(!allRolesArray.includes(roleUser)){
+      window.location.replace("/");
+    }
+  }
+}
+
   // Recovery of the HTML content of the route
   const html = await fetch(actualRoute.pathHtml).then((data) => data.text());
   // Adding HTML content to the ID element "main-page"
@@ -44,6 +62,9 @@ const LoadContentPage = async () => {
 
   // Changing page title
   document.title = actualRoute.title + " - " + websiteName;
+
+  // Show and hide elements according to role
+  showAndHidenElementsForRoles();
 };
 
 // Function to manage routing event (click on the links)
